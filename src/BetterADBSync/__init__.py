@@ -2,7 +2,7 @@
 
 """Sync files between a computer and an Android device"""
 
-__version__ = "1.4.0"
+__version__ = "1.4.0.post1"
 
 from typing import List, Tuple, Union
 import logging

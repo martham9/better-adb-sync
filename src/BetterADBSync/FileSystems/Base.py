@@ -26,7 +26,7 @@ class FileSystem():
                 return None
             return self._get_files_tree(tree_path_realpath, tree_path_stat_realpath, follow_links = follow_links)
         elif stat.S_ISDIR(tree_path_stat.st_mode):
-            tree = {".": (60 * (int(tree_path_stat.st_atime) // 60), 60 * (int(tree_path_stat.st_mtime) // 60))}
+            tree = {".": (int(tree_path_stat.st_atime), int(tree_path_stat.st_mtime))}
             for filename, stat_object_child, in self.lstat_in_dir(tree_path):
                 if filename in [".", ".."]:
                     continue
@@ -36,7 +36,7 @@ class FileSystem():
                     follow_links = follow_links)
             return tree
         elif stat.S_ISREG(tree_path_stat.st_mode):
-            return (60 * (int(tree_path_stat.st_atime) // 60), 60 * (int(tree_path_stat.st_mtime) // 60)) # minute resolution
+            return (int(tree_path_stat.st_atime), int(tree_path_stat.st_mtime)) # seconds resolution
         else:
             raise NotImplementedError
 

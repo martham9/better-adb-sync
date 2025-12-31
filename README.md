@@ -39,6 +39,8 @@ The reason for the rewrite is to
 - `--delete-excluded` will delete excluded files and folders on the destination end.
 - `--exclude` can be used many times. Each should be a `fnmatch` pattern relative to the source. These patterns will be ignored unless `--delete-excluded` is specified.
 - `--exclude-from` can be used many times. Each should be a filename of a file containing `fnmatch` patterns relative to the source.
+- file timestamps with seconds preserved (previously only with minutes, seconds always set to 0), uses `ls --full-time`
+- file timestamps older than 01/01/1970 supported
 
 ## Possible future TODOs
 

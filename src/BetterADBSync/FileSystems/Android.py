@@ -46,7 +46,10 @@ class AndroidFileSystem(FileSystem):
         (?P<st_mtime>
         [0-9]{4}-[0-9]{2}-[0-9]{2} # Date
         [ ]
-        [0-9]{2}:[0-9]{2}) # Time
+        [0-9]{2}:[0-9]{2}:[0-9]{2}) # Time with seconds
+        \.[0-9]+                    # .nanoseconds
+        [ ]
+        (?P<st_tz>[+-][0-9]{4})     # and timezone, ls --full-time
         [ ]
         # Don't capture filename for symlinks (ambiguous).
         (?(S_IFLNK) .* | (?P<filename> .*))
@@ -128,7 +131,7 @@ class AndroidFileSystem(FileSystem):
             if match_groupdict['S_IFSOCK']:
                 st_mode |= stat.S_IFSOCK
             st_size = None if match_groupdict["st_size"] is None else int(match_groupdict["st_size"])
-            st_mtime = int(datetime.datetime.strptime(match_groupdict["st_mtime"], "%Y-%m-%d %H:%M").timestamp())
+            st_mtime = int(datetime.datetime.strptime(match_groupdict["st_mtime"] + " " + match_groupdict["st_tz"], "%Y-%m-%d %H:%M:%S %z").timestamp())
 
             # Fill the rest with dummy values.
             st_ino = 1
@@ -169,20 +172,23 @@ class AndroidFileSystem(FileSystem):
             # permission error possible?
 
     def lstat(self, path: str) -> os.stat_result:
-        for line in self.adb_shell(["ls", "-lad", path]):
+        for line in self.adb_shell(["ls", "-lad", "--full-time", path]):
             return self.ls_to_stat(line)[1]
 
     def lstat_in_dir(self, path: str) -> Iterable[Tuple[str, os.stat_result]]:
-        for line in self.adb_shell(["ls", "-la", path]):
+        for line in self.adb_shell(["ls", "-la", "--full-time", path]):
             if self.RE_TOTAL.fullmatch(line):
                 continue
             else:
                 yield self.ls_to_stat(line)
 
     def utime(self, path: str, times: Tuple[int, int]) -> None:
-        atime = datetime.datetime.fromtimestamp(times[0]).strftime("%Y%m%d%H%M")
-        mtime = datetime.datetime.fromtimestamp(times[1]).strftime("%Y%m%d%H%M")
-        for line in self.adb_shell(["touch", "-at", atime, "-mt", mtime, path]):
+        base = datetime.datetime(1970, 1, 1)
+        atime = (base + datetime.timedelta(seconds=times[0])).strftime("%Y-%m-%d%H:%M:%S+0000")
+        mtime = (base + datetime.timedelta(seconds=times[1])).strftime("%Y-%m-%d%H:%M:%S+0000")
+        for line in self.adb_shell(["touch", "-a", "-d", atime, path]):
+            self.line_not_captured(line)
+        for line in self.adb_shell(["touch", "-m", "-d", mtime, path]):
             self.line_not_captured(line)
 
     def join(self, base: str, leaf: str) -> str:
