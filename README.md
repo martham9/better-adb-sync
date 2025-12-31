@@ -16,7 +16,7 @@ $ git clone https://github.com/martham9/better-adb-sync.git
 $ pip install better-adb-sync/
 ```
 
-## QRD
+## How to use
 
 To push from your computer to your phone use
 ```
